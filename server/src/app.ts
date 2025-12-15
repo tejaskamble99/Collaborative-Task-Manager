@@ -4,7 +4,8 @@ import dotenv from 'dotenv';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import connectDB from './config/db';
-import userRoutes from './routes/userRoutes'; // <-- ADDED
+import userRoutes from './routes/userRoutes'; 
+//import taskRoutes from './routes/taskRoutes';
 
 // Load Config
 dotenv.config();
@@ -26,7 +27,8 @@ app.use(cors());
 app.use(express.json());
 
 // ROUTE HANDLERS
-app.use('/api/users', userRoutes); // <-- ADDED
+app.use('/api/users', userRoutes); 
+// app.use('/api/tasks', taskRoutes);
 
 // Basic Test Route
 app.get('/', (req, res) => {
