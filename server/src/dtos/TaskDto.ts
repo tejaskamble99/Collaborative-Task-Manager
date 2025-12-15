@@ -15,3 +15,13 @@ export const CreateTaskSchema =z.object({
     status: z.nativeEnum(TaskSatus).default(TaskSatus.TODO),
 });
 export type CreateTaskDto = z.infer<typeof CreateTaskSchema>;
+
+export const UpdateTaskSchema = z.object({
+    title:z.string().min(1,"Title is required").optional(),
+    descreption :z.string().optional(),
+    dueDate : z.string().datetime("Invalid Date/time format for dueDate").optional(),
+    assignedToId: ObjectId.optional(),
+    priority: z.nativeEnum(TaskPriority).optional(),
+    status: z.nativeEnum(TaskSatus).optional(),
+});
+export type UpdateTaskDto = z.infer<typeof UpdateTaskSchema>;
