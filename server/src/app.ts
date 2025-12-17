@@ -17,13 +17,16 @@ const httpServer = createServer(app);
 // Socket.io Setup (The "Real-Time" Link)
 const io = new Server(httpServer, {
   cors: {
-    origin: "http://localhost:5173", // Allow Frontend (Vite)
+    origin: "http://localhost:3000", 
     methods: ["GET", "POST", "PUT", "DELETE"]
   }
 });
 
 // Middleware
-app.use(cors());
+app.use(cors({               // <--- NEW BLOCK
+  origin: 'http://localhost:3000',
+  credentials: true
+}));
 app.use(express.json());
 
 // ROUTE HANDLERS

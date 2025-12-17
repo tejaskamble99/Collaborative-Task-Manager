@@ -1,67 +1,62 @@
-import mongoose, { Document, Schema } from "mongoose";
+import mongoose, { Schema, Document } from 'mongoose';
 
 export enum TaskPriority {
-  LOW = "LOW",
-  MEDIUM = "MEDIUM",
-  HIGH = "HIGH",
-  URGENT = "URGENT",
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+  URGENT = 'URGENT'
 }
 
-export enum TaskStatus {
-  TODO = "To Do",
-  IN_PROGRESS = "In Progress",
-  REVIEW = "Review",
-  COMPLETED = "Completed",
+export enum TaskStatus { // Fixed spelling from "TaskSatus"
+  TODO = 'To Do',
+  IN_PROGRESS = 'In Progress',
+  REVIEW = 'Review',
+  COMPLETED = 'Completed'
 }
 
 export interface ITask extends Document {
   title: string;
   description: string;
-  dueDate: Date;
-  priority: TaskPriority;
   status: TaskStatus;
-  creatorId: mongoose.Schema.Types.ObjectId;
-  assignedToId: mongoose.Schema.Types.ObjectId;
+  priority: TaskPriority;
+  dueDate?: Date;
+  creatorId: mongoose.Types.ObjectId;
+  assignedToId?: mongoose.Types.ObjectId; // <--- This was likely missing in the interface
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const TaskSchema: Schema = new Schema({
-  title: {
-    type: String,
-    requird: true,
-    maxlenght: 100,
+  title: { type: String, required: true, trim: true },
+  description: { type: String, required: true },
+  
+  status: { 
+    type: String, 
+    enum: Object.values(TaskStatus), 
+    default: TaskStatus.TODO 
   },
-  description:{
-     type: String,
-    requird: true,
+  
+  priority: { 
+    type: String, 
+    enum: Object.values(TaskPriority), 
+    default: TaskPriority.MEDIUM 
   },
-  dueDate:{
-     type: Date,
-    requird: true,
+  
+  dueDate: { type: Date },
+  
+  creatorId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User', 
+    required: true 
   },
-  priority:{
-     type: String,
-    enum: Object.values(TaskPriority),
-    default: TaskPriority.MEDIUM,
-  },
-  status: {
-    type: String,
-    enum:Object.values(TaskStatus),
-    default: TaskStatus.TODO,
-  },
-  creatorId: {
-    type: Schema.Types.ObjectId,
-    ref:'User',
-    requird: true,
-  },
-  assingedToId:{
-     type: Schema.Types.ObjectId,
-    ref:'User',
-    requird: true,
-  },
-},
-{
-  timestamps: true,
-}
-);
-const Task = mongoose.model<ITask>('Task', TaskSchema);
-export default Task;
+
+  // 👇 THIS IS THE MISSING PART CAUSING THE ERROR
+  assignedToId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User',
+    default: null
+  }
+
+}, { timestamps: true });
+
+export default mongoose.model<ITask>('Task', TaskSchema);

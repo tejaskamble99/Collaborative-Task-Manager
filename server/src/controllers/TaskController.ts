@@ -31,6 +31,7 @@ export class TaskController {
       const tasks = await this.taskService.getAllTasks({});
       res.status(200).json(tasks);
     } catch (error: any) {
+      console.error("🔥 ERROR IN GET ALL TASKS:", error);
       res.status(500).json({ message: error.message });
     }
   };
