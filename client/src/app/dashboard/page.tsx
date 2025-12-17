@@ -1,39 +1,80 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { io } from 'socket.io-client';
 import { logoutUser } from '@/services/authService';
 import { getAllTasks, Task } from '@/services/taskService';
 import Button from '@/components/Button';
 import TaskCard from '@/components/TaskCard';
-import NewTaskModal from '@/components/NewTaskModal'; // <--- Import Modal
+import NewTaskModal from '@/components/NewTaskModal';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false); // <--- New State
+  const queryClient = useQueryClient();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Reuse this function to fetch tasks (we call it on load AND after creating a task)
-  const fetchTasks = async () => {
-    try {
-      const data = await getAllTasks();
-      setTasks(data);
-    } catch (error) {
-      console.error("Failed to fetch tasks", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // 🔍 Filter & Sort States
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [priorityFilter, setPriorityFilter] = useState('ALL');
+  const [sortBy, setSortBy] = useState('newest');
 
+  // Check Auth
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (!token) {
-      router.push('/login');
-      return;
-    }
-    fetchTasks();
+    if (!token) router.push('/login');
   }, [router]);
+
+  // Fetch Tasks (React Query)
+  const { data: tasks = [], isLoading, isError } = useQuery({
+    queryKey: ['tasks'],
+    queryFn: getAllTasks,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  // ⚡ Socket.io Real-time Updates
+  useEffect(() => {
+    const socket = io('http://localhost:5000');
+    socket.on('taskCreated', (newTask: Task) => {
+      queryClient.setQueryData(['tasks'], (oldTasks: Task[] | undefined) => {
+        if (!oldTasks) return [newTask];
+        if (oldTasks.find(t => t._id === newTask._id)) return oldTasks;
+        return [newTask, ...oldTasks];
+      });
+    });
+    return () => socket.disconnect();
+  }, [queryClient]);
+
+  // 🧠 Smart Filtering & Sorting Logic
+  const filteredTasks = useMemo(() => {
+    let result = [...tasks];
+
+    // 1. Filter by Status
+    if (statusFilter !== 'ALL') {
+      result = result.filter(t => t.status === statusFilter);
+    }
+
+    // 2. Filter by Priority
+    if (priorityFilter !== 'ALL') {
+      result = result.filter(t => t.priority === priorityFilter);
+    }
+
+    // 3. Sort
+    result.sort((a, b) => {
+      if (sortBy === 'newest') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      if (sortBy === 'oldest') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      if (sortBy === 'dueDate') {
+         // Handle missing due dates (put them last)
+         if (!a.dueDate) return 1;
+         if (!b.dueDate) return -1;
+         return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      }
+      return 0;
+    });
+
+    return result;
+  }, [tasks, statusFilter, priorityFilter, sortBy]);
 
   const handleLogout = () => {
     logoutUser();
@@ -54,32 +95,78 @@ export default function DashboardPage() {
       </nav>
 
       <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center mb-6">
+        
+        {/* Header & Controls */}
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
           <h2 className="text-2xl font-bold text-gray-900">Your Tasks</h2>
-          {/* 👇 Open Modal on Click */}
-          <Button onClick={() => setIsModalOpen(true)}>+ New Task</Button>
+          
+          <div className="flex flex-wrap gap-2">
+            {/* Filter Status */}
+            <select 
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="ALL">All Status</option>
+              <option value="To Do">To Do</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Completed">Completed</option>
+            </select>
+
+            {/* Filter Priority */}
+            <select 
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={priorityFilter}
+              onChange={(e) => setPriorityFilter(e.target.value)}
+            >
+              <option value="ALL">All Priority</option>
+              <option value="LOW">Low</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="HIGH">High</option>
+              <option value="URGENT">Urgent</option>
+            </select>
+
+            {/* Sort */}
+            <select 
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="dueDate">Due Date (Soonest)</option>
+            </select>
+
+            <Button onClick={() => setIsModalOpen(true)}>+ New Task</Button>
+          </div>
         </div>
 
-        {loading ? (
-          <p className="text-center text-gray-500">Loading tasks...</p>
-        ) : tasks.length === 0 ? (
+        {/* Task List */}
+        {isLoading ? (
+          <div className="space-y-4">
+             {[1, 2, 3].map((i) => (
+               <div key={i} className="h-32 bg-gray-200 rounded-lg animate-pulse"></div>
+             ))}
+          </div>
+        ) : isError ? (
+          <p className="text-red-500">Error loading tasks.</p>
+        ) : filteredTasks.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-lg border-2 border-dashed border-gray-300">
-            <p className="text-gray-500">No tasks found. Create one to get started!</p>
+            <p className="text-gray-500">No tasks found matching your filters.</p>
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {tasks.map((task) => (
+            {filteredTasks.map((task) => (
               <TaskCard key={task._id} task={task} />
             ))}
           </div>
         )}
       </main>
 
-      {/* 👇 Render the Modal */}
       <NewTaskModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
-        onTaskCreated={fetchTasks} // Refresh list after create
+        onTaskCreated={() => queryClient.invalidateQueries({ queryKey: ['tasks'] })} 
       />
     </div>
   );
