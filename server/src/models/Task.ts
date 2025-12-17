@@ -7,7 +7,7 @@ export enum TaskPriority {
   URGENT = "URGENT",
 }
 
-export enum TaskSatus {
+export enum TaskStatus {
   TODO = "To Do",
   IN_PROGRESS = "In Progress",
   REVIEW = "Review",
@@ -19,12 +19,12 @@ export interface ITask extends Document {
   description: string;
   dueDate: Date;
   priority: TaskPriority;
-  status: TaskSatus;
+  status: TaskStatus;
   creatorId: mongoose.Schema.Types.ObjectId;
   assignedToId: mongoose.Schema.Types.ObjectId;
 }
 
-const taskSchema: Schema = new Schema({
+const TaskSchema: Schema = new Schema({
   title: {
     type: String,
     requird: true,
@@ -45,8 +45,8 @@ const taskSchema: Schema = new Schema({
   },
   status: {
     type: String,
-    enum:Object.values(TaskSatus),
-    default: TaskSatus.TODO,
+    enum:Object.values(TaskStatus),
+    default: TaskStatus.TODO,
   },
   creatorId: {
     type: Schema.Types.ObjectId,
@@ -63,3 +63,5 @@ const taskSchema: Schema = new Schema({
   timestamps: true,
 }
 );
+const Task = mongoose.model<ITask>('Task', TaskSchema);
+export default Task;

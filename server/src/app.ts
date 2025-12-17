@@ -5,7 +5,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import connectDB from './config/db';
 import userRoutes from './routes/userRoutes'; 
-//import taskRoutes from './routes/taskRoutes';
+import taskRoutes from './routes/taskRoutes';
 
 // Load Config
 dotenv.config();
@@ -28,7 +28,7 @@ app.use(express.json());
 
 // ROUTE HANDLERS
 app.use('/api/users', userRoutes); 
-// app.use('/api/tasks', taskRoutes);
+app.use('/api/tasks', taskRoutes);
 
 // Basic Test Route
 app.get('/', (req, res) => {
