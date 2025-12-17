@@ -21,14 +21,13 @@ describe('TaskService Unit Tests', () => {
       creatorId: 'user123'
     };
     
-    // Spy on the Repository prototype directly
-    // This intercepts the call inside the REAL TaskService
+    
     const createSpy = jest.spyOn(TaskRepository.prototype, 'create')
       .mockResolvedValue({ ...mockTaskData, _id: 'task123' } as any);
 
     const result = await taskService.createTask('user123', mockTaskData as any);
 
-    // Verify
+   
     expect(createSpy).toHaveBeenCalledTimes(1);
     expect((result as any)._id).toBe('task123');
     expect((result as any).title).toBe('Test Task');
@@ -41,7 +40,7 @@ describe('TaskService Unit Tests', () => {
       priority: 'LOW'
     };
     
-    // Simulate repository returning the object (assuming validation happened before)
+    
     jest.spyOn(TaskRepository.prototype, 'create')
       .mockResolvedValue({ ...invalidTaskData, _id: 'task999' } as any);
     
@@ -55,11 +54,11 @@ describe('TaskService Unit Tests', () => {
     const updateData = { status: 'Completed' };
     const userId = 'user123';
 
-    // Mock findById to simulate "Task Exists and User Owns It"
+    
     jest.spyOn(TaskRepository.prototype, 'findById')
       .mockResolvedValue({ _id: taskId, creatorId: userId } as any);
     
-    // Mock the update
+    
     const updateSpy = jest.spyOn(TaskRepository.prototype, 'update')
       .mockResolvedValue({ _id: taskId, status: 'Completed' } as any);
 
