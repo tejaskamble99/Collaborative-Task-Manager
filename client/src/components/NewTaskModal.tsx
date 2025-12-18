@@ -41,9 +41,17 @@ export default function NewTaskModal({ isOpen, onClose, onTaskCreated }: NewTask
       
       onTaskCreated(); // Refresh the list
       onClose();       // Close modal
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to create task', error);
-      alert('Failed to create task. Please try again.');
+      
+      // 👇 ADD THIS CODE TO SEE THE REAL ERROR
+      if (error.response && error.response.data) {
+        console.log("SERVER ERROR DETAILS:", error.response.data);
+        alert(`Backend Error: ${JSON.stringify(error.response.data)}`);
+      } else {
+        alert('Failed to create task. Please try again.');
+      }
+      
     } finally {
       setLoading(false);
     }
