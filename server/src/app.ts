@@ -23,8 +23,11 @@ const io = new Server(httpServer, {
 });
 
 // Middleware
-app.use(cors({               // <--- NEW BLOCK
-  origin: 'http://localhost:3000',
+app.use(cors({
+  origin: [
+    "http://localhost:3000",                         // 👈 YOUR LOCAL HOST
+    "https://collaborative-task-manager-five.vercel.app" // 👈 YOUR VERCEL DOMAIN
+  ],
   credentials: true
 }));
 app.use(express.json());
