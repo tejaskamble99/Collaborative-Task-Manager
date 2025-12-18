@@ -4,9 +4,13 @@ export interface Task {
   _id: string;
   title: string;
   description: string;
-  status: 'To Do' | 'In Progress' | 'Review' | 'Completed';
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
-  dueDate?: string;
+  status: string;
+  priority: string;
+  dueDate: string;
+  creatorId: string;
+  assignedToId?: string;
+  createdAt: string;  // 👈 ADD THIS LINE
+  updatedAt?: string; // (Optional) Good to add this too
 }
 
 export const getAllTasks = async () => {
