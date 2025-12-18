@@ -34,8 +34,11 @@ export default function DashboardPage() {
   });
 
   // ⚡ Socket.io Real-time Updates
-  useEffect(() => {
-    const socket = io('http://localhost:5000');
+  useEffect( () => {
+    // 👇 Use the same variable
+    const socketUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    const socket = io(socketUrl); 
+
     socket.on('taskCreated', (newTask: Task) => {
       queryClient.setQueryData(['tasks'], (oldTasks: Task[] | undefined) => {
         if (!oldTasks) return [newTask];
@@ -43,7 +46,7 @@ export default function DashboardPage() {
         return [newTask, ...oldTasks];
       });
     });
-    return () => socket.disconnect();
+    return () => { socket.disconnect(); }; // Fix: remove implicit return issue
   }, [queryClient]);
 
   // 🧠 Smart Filtering & Sorting Logic
