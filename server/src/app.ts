@@ -21,7 +21,8 @@ const io = new Server(httpServer, {
       "http://localhost:3000",                            // Localhost
       "https://collaborative-task-manager-five.vercel.app" // 👈 YOUR VERCEL DOMAIN
     ],
-    methods: ["GET", "POST", "PUT", "DELETE"]
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
   }
 });
 
