@@ -13,6 +13,10 @@ dotenv.config();
 connectDB();
 
 const app = express();
+
+// Required for express-rate-limit to work correctly behind Render/Vercel proxies
+app.set('trust proxy', 1);
+
 const httpServer = createServer(app);
 
 // Socket.io Setup
