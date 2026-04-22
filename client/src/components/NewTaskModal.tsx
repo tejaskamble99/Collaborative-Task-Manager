@@ -1,6 +1,6 @@
 import { useState } from 'react';
+import { toast } from 'react-toastify';
 import { createTask } from '@/services/taskService';
- 
 
 interface NewTaskModalProps {
   isOpen: boolean;
@@ -22,36 +22,32 @@ export default function NewTaskModal({ isOpen, onClose, onTaskCreated }: NewTask
     setLoading(true);
 
     try {
-   
       const taskData = {
         title,
         description,
         priority,
-        status: 'To Do', // Default status
-        dueDate: dueDate || new Date().toISOString(), 
+        status: 'To Do' as const,
+        // Fix: convert "YYYY-MM-DD" from <input type="date"> to a full ISO string
+        dueDate: dueDate
+          ? new Date(dueDate).toISOString()
+          : new Date().toISOString(),
       };
 
       await createTask(taskData);
-      
+
       // Reset form
       setTitle('');
       setDescription('');
       setPriority('MEDIUM');
       setDueDate('');
-      
-      onTaskCreated(); // Refresh the list
-      onClose();       // Close modal
+
+      toast.success('Task created successfully!');
+      onTaskCreated();
+      onClose();
     } catch (error: any) {
-      console.error('Failed to create task', error);
-      
-      // 👇 ADD THIS CODE TO SEE THE REAL ERROR
-      if (error.response && error.response.data) {
-        console.log("SERVER ERROR DETAILS:", error.response.data);
-        alert(`Backend Error: ${JSON.stringify(error.response.data)}`);
-      } else {
-        alert('Failed to create task. Please try again.');
-      }
-      
+      const message =
+        error.response?.data?.message || 'Failed to create task. Please try again.';
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -61,12 +57,12 @@ export default function NewTaskModal({ isOpen, onClose, onTaskCreated }: NewTask
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
       <div className="bg-white p-6 rounded-lg shadow-xl w-96 max-w-full">
         <h2 className="text-xl font-bold mb-4">Create New Task</h2>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">Title</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               required
               className="mt-1 block w-full rounded-md border border-gray-300 p-2 focus:border-blue-500 focus:ring-blue-500"
               value={title}
@@ -76,7 +72,7 @@ export default function NewTaskModal({ isOpen, onClose, onTaskCreated }: NewTask
 
           <div>
             <label className="block text-sm font-medium text-gray-700">Description</label>
-            <textarea 
+            <textarea
               required
               rows={3}
               className="mt-1 block w-full rounded-md border border-gray-300 p-2 focus:border-blue-500 focus:ring-blue-500"
@@ -88,7 +84,7 @@ export default function NewTaskModal({ isOpen, onClose, onTaskCreated }: NewTask
           <div className="flex gap-4">
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-700">Priority</label>
-              <select 
+              <select
                 className="mt-1 block w-full rounded-md border border-gray-300 p-2"
                 value={priority}
                 onChange={(e) => setPriority(e.target.value)}
@@ -102,8 +98,8 @@ export default function NewTaskModal({ isOpen, onClose, onTaskCreated }: NewTask
 
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-700">Due Date</label>
-              <input 
-                type="date" 
+              <input
+                type="date"
                 required
                 className="mt-1 block w-full rounded-md border border-gray-300 p-2"
                 value={dueDate}
@@ -113,15 +109,15 @@ export default function NewTaskModal({ isOpen, onClose, onTaskCreated }: NewTask
           </div>
 
           <div className="flex justify-end gap-3 mt-6">
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={onClose}
               className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
             >
               Cancel
             </button>
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={loading}
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
             >

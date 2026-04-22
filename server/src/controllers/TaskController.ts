@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { TaskService } from '../services/TaskService';
 import { CreateTaskSchema, UpdateTaskSchema } from '../dtos/TaskDto';
-import {io} from '../app';
+import { io } from '../app';
 
 interface AuthRequest extends Request {
   user?: { _id: string };
@@ -17,42 +17,58 @@ export class TaskController {
   create = async (req: AuthRequest, res: Response) => {
     try {
       if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
+
       const validatedData = CreateTaskSchema.parse(req.body);
       const task = await this.taskService.createTask(req.user._id, validatedData);
-      io.emit('taskCreated', task); // Notify everyone that a new task exists
-      res.status(201).json(task);
+
+      io.emit('taskCreated', task);
+      return res.status(201).json(task);
     } catch (error: any) {
-      res.status(400).json({ message: error.message });
+      return res.status(400).json({ message: error.message });
     }
   };
 
   getAll = async (req: Request, res: Response) => {
     try {
       const tasks = await this.taskService.getAllTasks({});
-      res.status(200).json(tasks);
+      return res.status(200).json(tasks);
     } catch (error: any) {
-      console.error("🔥 ERROR IN GET ALL TASKS:", error);
-      res.status(500).json({ message: error.message });
+      return res.status(500).json({ message: error.message });
     }
   };
 
   update = async (req: AuthRequest, res: Response) => {
     try {
+      if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
+
+      const taskId = String(req.params.id);
       const validatedData = UpdateTaskSchema.parse(req.body);
-      const updatedTask = await this.taskService.updateTask(req.params.id, req.user?._id || '', validatedData);
-      io.emit('taskUpdated', updatedTask);// Notify everyone that this task changed
-      res.status(200).json(updatedTask);
+      const updatedTask = await this.taskService.updateTask(
+        taskId,
+        req.user._id,
+        validatedData
+      );
+
+      io.emit('taskUpdated', updatedTask);
+      return res.status(200).json(updatedTask);
     } catch (error: any) {
-      res.status(400).json({ message: error.message });
+      const status = error.message.includes('Not authorized') ? 403 : 400;
+      return res.status(status).json({ message: error.message });
     }
   };
 
-  delete = async (req: Request, res: Response) => {
+  delete = async (req: AuthRequest, res: Response) => {
     try {
-      await this.taskService.deleteTask(req.params.id);
-      res.status(200).json({ message: 'Task deleted' });
+      if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
+
+      const taskId = String(req.params.id);
+      await this.taskService.deleteTask(taskId, req.user._id);
+
+      io.emit('taskDeleted', taskId);
+      return res.status(200).json({ message: 'Task deleted' });
     } catch (error: any) {
-      res.status(500).json({ message: error.message });
+      const status = error.message.includes('Not authorized') ? 403 : 500;
+      return res.status(status).json({ message: error.message });
     }
   };
 }
